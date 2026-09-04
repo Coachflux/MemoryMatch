@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#e0e5ec">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>MemoMatch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #e0e5ec;
+            --text: #4a5568;
+            --text-light: #718096;
+            --shadow-dark: #a3b1c6;
+            --shadow-light: #ffffff;
+            --blue: #667eea;
+            --pink: #f093fb;
+            --green: #4ade80;
+            --orange: #fb923c;
+            --red: #f87171;
+            --yellow: #facc15;
+            --purple: #a78bfa;
+            --teal: #2dd4bf;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+            min-height: 100vh; min-height: 100dvh;
+            display: flex; justify-content: center; align-items: flex-start;
+            color: var(--text); overflow: hidden;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .page {
+            width: 100%; max-width: 540px;
+            height: 100vh; height: 100dvh;
+            padding: 8px 12px; display: none;
+            overflow: hidden; flex-direction: column;
+        }
+        #gamePage {
+            overflow-y: auto;
+        }
+        .page.active { display: flex; }
+
+        /* Splash */
+        #splashPage { justify-content: center; align-items: center; }
+        .splash-logo {
+            font-size: clamp(2.5rem, 10vw, 4rem); font-weight: 900;
+            background: linear-gradient(135deg, var(--blue), var(--pink), var(--purple));
+            background-size: 200% 200%;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease infinite; text-align: center;
+        }
+        @keyframes gradientShift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .splash-sub { color: var(--text-light); font-size: 0.9rem; font-weight: 500; margin-top: 8px; text-align: center; }
+        .splash-loader {
+            width: 120px; height: 4px; background: var(--bg);
+            box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
+            border-radius: 2px; margin-top: 24px; overflow: hidden;
+        }
+        .splash-loader-bar {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, var(--blue), var(--pink));
+            border-radius: 2px; animation: loadBar 1.5s ease-out forwards;
+        }
+        @keyframes loadBar { 0% { width: 0%; } 100% { width: 100%; } }
+        .splash-version { position: absolute; bottom: 24px; color: var(--text-light); font-size: 0.7rem; font-weight: 500; }
+
+        /* Neumorphism */
+        .neu-flat {
+            background: var(--bg);
+            box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .neu-pressed {
+            background: var(--bg);
+            box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+            border-radius: 16px;
+        }
+        .neu-btn {
+            background: var(--bg);
+            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+            border: none; border-radius: 14px; cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Poppins', sans-serif;
+            color: var(--text); font-weight: 600; font-size: 0.85rem;
+            position: relative; overflow: hidden;
+        }
+        .neu-btn:hover { transform: translateY(-2px); }
+        .neu-btn:active {
+            transform: translateY(0);
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+        }
+        .neu-btn.active {
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+            color: var(--blue);
+        }
+        .neu-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+        /* Menu */
+        .menu-header { text-align: center; padding: 6px 4px 4px; flex-shrink: 0; }
+        .menu-logo { font-size: clamp(1.8rem, 6vw, 2.4rem); font-weight: 800; background: linear-gradient(135deg, var(--blue), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .menu-subtitle { color: var(--text-light); font-size: 0.7rem; font-weight: 500; }
+        .menu-stats-bar { display: flex; gap: 8px; margin: 8px 0; flex-shrink: 0; }
+        .menu-stat { flex: 1; padding: 8px 4px; text-align: center; }
+        .menu-stat-val { font-size: 1.1rem; font-weight: 800; color: var(--blue); }
+        .menu-stat-label { font-size: 0.55rem; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .section-label { font-size: 0.6rem; color: var(--text-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin: 10px 0 6px 4px; display: flex; align-items: center; gap: 6px; }
+        .section-label::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--blue); }
+        .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .mode-btn { padding: 14px 4px; font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .mode-btn .icon { font-size: 1.6rem; }
+        .mode-btn .badge { font-size: 0.55rem; padding: 2px 6px; border-radius: 10px; background: linear-gradient(135deg, var(--green), var(--teal)); color: white; font-weight: 700; }
+        .diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+        .diff-btn { padding: 10px 2px; font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .diff-btn .d-name { font-weight: 700; font-size: 0.8rem; }
+        .diff-btn .d-count { font-size: 0.6rem; color: var(--text-light); }
+        .diff-btn .d-time { font-size: 0.55rem; color: var(--green); font-weight: 600; }
+        .cat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 10px; }
+        .cat-btn { padding: 10px 2px; font-size: 0.65rem; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .cat-btn .c-icon { font-size: 1.4rem; }
+        .start-btn {
+            width: 100%; padding: 16px; font-size: 1rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--blue), #764ba2); color: white; margin-top: 4px;
+            box-shadow: 5px 5px 15px rgba(102, 126, 234, 0.4), -5px -5px 15px var(--shadow-light);
+        }
+        .start-btn:hover { filter: brightness(1.15); transform: translateY(-2px); }
+        .start-btn:active { transform: translateY(0); }
+
+        /* Game */
+        .game-header { display: flex; justify-content: space-between; align-items: center; padding: 2px 4px; flex-shrink: 0; margin-bottom: 2px; }
+        .icon-btn { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; }
+        .game-title { font-size: clamp(1rem, 4vw, 1.3rem); font-weight: 700; background: linear-gradient(135deg, var(--blue), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .turn-pill { text-align: center; padding: 4px 10px; margin-bottom: 4px; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .turn-pill.p1 { color: var(--blue); }
+        .turn-pill.p2 { color: var(--pink); }
+        .turn-pill.ai { color: var(--orange); }
+        .turn-indicator { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 1.5s ease infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+        .score-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 4px; flex-shrink: 0; }
+        .score-box { padding: 6px 4px; text-align: center; position: relative; overflow: hidden; }
+        .score-box.active::after { content: ''; position: absolute; bottom: 0; left: 20%; right: 20%; height: 3px; border-radius: 2px; background: currentColor; opacity: 0.6; }
+        .score-label { font-size: 0.55rem; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .score-num { font-size: 1.3rem; font-weight: 800; line-height: 1.1; }
+        .s-p1 { color: var(--blue); } .s-p2 { color: var(--pink); } .s-draw { color: var(--orange); }
+        .timer-bar { height: 3px; background: var(--bg); box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light); border-radius: 2px; margin-bottom: 4px; overflow: hidden; flex-shrink: 0; }
+        .timer-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--green), var(--teal)); transition: width 1s linear; }
+        .timer-fill.warning { background: linear-gradient(90deg, var(--orange), var(--red)); }
+        .timer-fill.danger { background: linear-gradient(90deg, var(--red), #dc2626); }
+        .board-wrap { padding: 4px; margin-bottom: 4px; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; }
+        .board { display: grid; gap: 5px; width: 100%; justify-content: center; }
+        .board.baby { grid-template-columns: repeat(2, 1fr); max-width: 160px; }
+        .board.easy { grid-template-columns: repeat(4, 1fr); max-width: 320px; }
+        .board.normal { grid-template-columns: repeat(5, 1fr); max-width: 350px; }
+        .board.hard { grid-template-columns: repeat(6, 1fr); max-width: 390px; }
+        .board.expert { grid-template-columns: repeat(8, 1fr); gap: 4px; }
+        .board.insane { grid-template-columns: repeat(8, 1fr); gap: 3px; }
+        .board.expert .card, .board.insane .card {
+            font-size: clamp(0.9rem, 2.2vw, 1.3rem);
+            border-radius: 8px;
+        }
+        .board.expert .card-face, .board.insane .card-face { border-radius: 8px; }
+        .card {
+            aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border-radius: 10px; background: var(--bg);
+            box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+            transition: all 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative; transform-style: preserve-3d; user-select: none;
+            font-size: clamp(1rem, 3vw, 1.6rem);
+            min-width: 0; min-height: 0;
+            width: 100%;
+        }
+        .card.remaining { box-shadow: 0 0 12px rgba(74, 222, 128, 0.3), 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light); }
+        .card.remaining:hover:not(.flipped):not(.matched):not(.disabled) {
+            box-shadow: 0 0 20px rgba(74, 222, 128, 0.5), 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+            transform: scale(1.08);
+        }
+        .card:hover:not(.flipped):not(.matched):not(.disabled):not(.remaining) { transform: scale(1.08); }
+        .card.flipped { transform: rotateY(180deg); box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light); }
+        .card.matched {
+            animation: matchPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 0 20px rgba(74, 222, 128, 0.8), inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+            cursor: default;
+            border: 2px solid var(--green);
+        }
+        .card.matched .card-back {
+            background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(45,212,191,0.1));
+        }
+        .card.matched .card-back::after {
+            content: '✓';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%; height: 70%;
+            background: rgba(74, 222, 128, 0.25);
+            color: var(--green);
+            border-radius: 50%;
+            font-size: clamp(1rem, 4vw, 2rem);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900;
+            border: 2px solid rgba(74, 222, 128, 0.5);
+            pointer-events: none;
+            z-index: 2;
+        }
+        @keyframes matchPop {
+            0% { transform: rotateY(180deg) scale(1); }
+            40% { transform: rotateY(180deg) scale(1.2); }
+            70% { transform: rotateY(180deg) scale(0.95); }
+            100% { transform: rotateY(180deg) scale(1); }
+        }
+        .card-face { position: absolute; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; backface-visibility: hidden; border-radius: 10px; }
+        .card-front { background: var(--bg); box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light); }
+        .card-front::after { content: '?'; font-size: clamp(0.7rem, 2vw, 1rem); font-weight: 800; color: var(--text-light); opacity: 0.25; }
+        .card-back { transform: rotateY(180deg); background: var(--bg); box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light); }
+        .card.disabled { pointer-events: none; opacity: 0.5; }
+        .combo-text { position: absolute; font-weight: 900; font-size: 0.7rem; pointer-events: none; animation: comboFloat 1s ease-out forwards; z-index: 100; }
+        @keyframes comboFloat { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-40px) scale(1.3); } }
+        .controls { display: flex; gap: 8px; flex-shrink: 0; padding-bottom: 4px; }
+        .ctrl-btn { flex: 1; padding: 10px; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-primary { background: linear-gradient(135deg, var(--blue), #764ba2); color: white; box-shadow: 4px 4px 12px rgba(102, 126, 234, 0.35), -4px -4px 12px var(--shadow-light); }
+        .btn-hint { background: linear-gradient(135deg, var(--yellow), var(--orange)); color: white; }
+
+        /* Turn notification */
+        .turn-notify {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            color: white;
+            padding: 16px 32px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            z-index: 2000;
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            pointer-events: none;
+            text-align: center;
+        }
+        .turn-notify.show { transform: translate(-50%, -50%) scale(1); }
+        .turn-notify.p2-notify { background: linear-gradient(135deg, var(--pink), var(--purple)); }
+        .turn-notify.ai-notify { background: linear-gradient(135deg, var(--orange), var(--red)); }
+
+        /* Zen mode extras */
+        .zen-bar {
+            display: flex; gap: 8px; margin-bottom: 6px; flex-shrink: 0;
+        }
+        .zen-stat {
+            flex: 1; padding: 6px 4px; text-align: center;
+        }
+        .zen-stat-val { font-size: 1rem; font-weight: 800; color: var(--teal); }
+        .zen-stat-label { font-size: 0.5rem; color: var(--text-light); font-weight: 600; text-transform: uppercase; }
+        .stars-display {
+            display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; flex-shrink: 0;
+        }
+        .star { font-size: 1.2rem; filter: grayscale(1); opacity: 0.3; transition: all 0.3s; }
+        .star.earned { filter: grayscale(0); opacity: 1; animation: starPop 0.5s ease; }
+        @keyframes starPop { 0% { transform: scale(0); } 60% { transform: scale(1.3); } 100% { transform: scale(1); } }
+
+        /* Overlay */
+        .overlay { position: fixed; inset: 0; background: rgba(224, 229, 236, 0.97); backdrop-filter: blur(12px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
+        .overlay.active { opacity: 1; pointer-events: all; }
+        .modal { padding: 28px 22px; text-align: center; width: min(340px, 88%); transform: scale(0.85) translateY(20px); transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .overlay.active .modal { transform: scale(1) translateY(0); }
+        .modal-icon { font-size: 3.5rem; margin-bottom: 8px; display: block; animation: bounce 0.6s ease infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+        .modal-title { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, var(--blue), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
+        .modal-sub { color: var(--text-light); font-size: 0.85rem; margin-bottom: 18px; }
+        .modal-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+        .m-stat { padding: 10px 4px; }
+        .m-stat-label { font-size: 0.6rem; color: var(--text-light); font-weight: 600; text-transform: uppercase; }
+        .m-stat-val { font-size: 1.3rem; font-weight: 800; }
+        .modal-btn { width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .modal-btn-secondary { background: transparent; box-shadow: none; color: var(--text-light); font-size: 0.8rem; padding: 8px; }
+        .achievement-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: linear-gradient(135deg, var(--yellow), var(--orange)); color: white; padding: 12px 20px; border-radius: 14px; font-weight: 700; font-size: 0.85rem; z-index: 3000; box-shadow: 0 8px 24px rgba(251, 146, 60, 0.4); transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); display: flex; align-items: center; gap: 8px; }
+        .achievement-toast.show { transform: translateX(-50%) translateY(0); }
+        .confetti { position: fixed; width: 10px; height: 10px; top: -10px; animation: confettiFall 3s linear forwards; z-index: 999; }
+        @keyframes confettiFall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(1080deg); opacity: 0; } }
+
+        /* Settings */
+        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; margin-bottom: 6px; }
+        .settings-label { font-weight: 600; font-size: 0.85rem; }
+        .settings-desc { font-size: 0.65rem; color: var(--text-light); }
+        .toggle { width: 48px; height: 26px; border-radius: 13px; background: var(--bg); box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light); position: relative; cursor: pointer; transition: all 0.3s; }
+        .toggle.on { background: linear-gradient(135deg, var(--blue), var(--purple)); }
+        .toggle-knob { width: 20px; height: 20px; border-radius: 50%; background: var(--bg); box-shadow: 2px 2px 4px var(--shadow-dark), -2px -2px 4px var(--shadow-light); position: absolute; top: 3px; left: 3px; transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .toggle.on .toggle-knob { transform: translateX(22px); background: white; }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 10px; }
+        .stat-card { padding: 14px 8px; text-align: center; }
+        .stat-card-val { font-size: 1.6rem; font-weight: 800; color: var(--blue); }
+        .stat-card-label { font-size: 0.65rem; color: var(--text-light); font-weight: 600; text-transform: uppercase; }
+        .achievement-list { overflow-y: auto; flex: 1; }
+        .achievement-item { display: flex; align-items: center; gap: 10px; padding: 10px; margin-bottom: 6px; opacity: 0.4; transition: opacity 0.3s; }
+        .achievement-item.unlocked { opacity: 1; box-shadow: 0 0 12px rgba(102, 126, 234, 0.15), 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light); }
+        .achievement-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+        .achievement-info { flex: 1; }
+        .achievement-name { font-weight: 700; font-size: 0.8rem; }
+        .achievement-desc { font-size: 0.65rem; color: var(--text-light); }
+
+        /* Power-ups */
+        .powerup-bar { display: flex; gap: 6px; margin-bottom: 6px; flex-shrink: 0; justify-content: center; }
+        .powerup-btn { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; padding: 0; }
+        .powerup-btn .count { position: absolute; bottom: -2px; right: -2px; width: 16px; height: 16px; border-radius: 50%; background: var(--red); color: white; font-size: 0.55rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+        @media (max-width: 380px) {
+            .cat-grid { grid-template-columns: repeat(4, 1fr); }
+            .board.baby { grid-template-columns: repeat(2, 1fr); }
+            .board.easy { grid-template-columns: repeat(4, 1fr); }
+            .board.normal { grid-template-columns: repeat(4, 1fr); }
+            .board.hard { grid-template-columns: repeat(5, 1fr); }
+            .board.expert { grid-template-columns: repeat(5, 1fr); gap: 3px; }
+            .board.insane { grid-template-columns: repeat(5, 1fr); gap: 3px; }
+            .card { font-size: 0.9rem; border-radius: 8px; }
+            .board.expert .card, .board.insane .card { font-size: clamp(0.75rem, 2.2vw, 1rem); }
+            .card-back { border-radius: 8px; }
+            .card-front { border-radius: 8px; }
+        }
+        @media (min-width: 381px) and (max-width: 480px) {
+            .board.expert { grid-template-columns: repeat(5, 1fr); max-width: 420px; gap: 3px; }
+            .board.insane { grid-template-columns: repeat(5, 1fr); max-width: 440px; gap: 3px; }
+            .board.expert .card, .board.insane .card { font-size: clamp(0.8rem, 2.2vw, 1.1rem); }
+        }
+        @media (min-height: 800px) { .mode-btn { padding: 18px 4px; } .diff-btn { padding: 14px 2px; } .cat-btn { padding: 12px 2px; } }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--shadow-dark); border-radius: 2px; }
+    </style>
+</head>
+<body>
+    <!-- SPLASH -->
+    <div class="page active" id="splashPage">
+        <div class="splash-logo">MemoMatch</div>
+        <div class="splash-sub">Memory Battle Arena</div>
+        <div class="splash-loader"><div class="splash-loader-bar"></div></div>
+        <div class="splash-version">v2.1.0</div>
+    </div>
+
+    <!-- MENU -->
+    <div class="page" id="menuPage">
+        <div class="menu-header">
+            <div class="menu-logo">MemoMatch</div>
+            <div class="menu-subtitle">Memory Battle Arena</div>
+        </div>
+        <div class="menu-stats-bar">
+            <div class="menu-stat neu-flat">
+                <div class="menu-stat-val" id="menuTotalGames">0</div>
+                <div class="menu-stat-label">Games</div>
+            </div>
+            <div class="menu-stat neu-flat">
+                <div class="menu-stat-val" id="menuWinRate">0%</div>
+                <div class="menu-stat-label">Win Rate</div>
+            </div>
+            <div class="menu-stat neu-flat">
+                <div class="menu-stat-val" id="menuBestTime">--</div>
+                <div class="menu-stat-label">Best Time</div>
+            </div>
+            <div class="menu-stat neu-flat">
+                <div class="menu-stat-val" id="menuAchievements">0</div>
+                <div class="menu-stat-label">Trophies</div>
+            </div>
+        </div>
+        <div class="neu-flat" style="padding: 14px; flex: 1; overflow-y: auto;">
+            <div class="section-label">Game Mode</div>
+            <div class="mode-grid">
+                <button class="neu-btn mode-btn active" id="btnPvc" onclick="setMode('pvc')"><span class="icon">🤖</span><span>Vs Computer</span></button>
+                <button class="neu-btn mode-btn" id="btnPvp" onclick="setMode('pvp')"><span class="icon">👥</span><span>Vs Player 2</span></button>
+                <button class="neu-btn mode-btn" id="btnZen" onclick="setMode('zen')"><span class="icon">🧘</span><span>Zen Mode</span></button>
+                <button class="neu-btn mode-btn" id="btnTime" onclick="setMode('time')"><span class="icon">⚡</span><span>Time Attack</span><span class="badge">HOT</span></button>
+            </div>
+            <div class="section-label">Difficulty</div>
+            <div class="diff-grid">
+                <button class="neu-btn diff-btn" id="btnBaby" onclick="setDiff('baby')"><span class="d-name">Baby</span><span class="d-count">4 Cards</span><span class="d-time">Tutorial</span></button>
+                <button class="neu-btn diff-btn active" id="btnEasy" onclick="setDiff('easy')"><span class="d-name">Easy</span><span class="d-count">16 Cards</span><span class="d-time">2 min</span></button>
+                <button class="neu-btn diff-btn" id="btnNormal" onclick="setDiff('normal')"><span class="d-name">Normal</span><span class="d-count">20 Cards</span><span class="d-time">3 min</span></button>
+                <button class="neu-btn diff-btn" id="btnHard" onclick="setDiff('hard')"><span class="d-name">Hard</span><span class="d-count">30 Cards</span><span class="d-time">4 min</span></button>
+                <button class="neu-btn diff-btn" id="btnExpert" onclick="setDiff('expert')"><span class="d-name">Expert</span><span class="d-count">40 Cards</span><span class="d-time">5 min</span></button>
+                <button class="neu-btn diff-btn" id="btnInsane" onclick="setDiff('insane')"><span class="d-name">Insane</span><span class="d-count">50 Cards</span><span class="d-time">6 min</span></button>
+            </div>
+            <div class="section-label">Category</div>
+            <div class="cat-grid" id="catGrid"></div>
+            <div style="display: flex; gap: 8px; margin-top: 4px;">
+                <button class="neu-btn ctrl-btn" onclick="showPage('statsPage')" style="flex: 1;">📊 Stats</button>
+                <button class="neu-btn ctrl-btn" onclick="showPage('settingsPage')" style="flex: 1;">⚙️ Settings</button>
+            </div>
+            <button class="neu-btn start-btn" onclick="launchGame()" style="margin-top: 8px;">Start Game</button>
+        </div>
+    </div>
+
+    <!-- GAME -->
+    <div class="page" id="gamePage">
+        <div class="game-header">
+            <button class="neu-btn icon-btn" onclick="confirmQuit()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
+            <div class="game-title">MemoMatch</div>
+            <button class="neu-btn icon-btn" onclick="toggleSound()" id="soundBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" id="soundWave"></path>
+                    <line x1="1" y1="1" x2="23" y2="23" id="soundMute" style="display:none"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="turn-pill neu-pressed p1" id="turnPill">
+            <span class="turn-indicator"></span>
+            <span id="turnText">Player 1's Turn</span>
+        </div>
+        <div class="timer-bar" id="timerBar" style="display:none;">
+            <div class="timer-fill" id="timerFill" style="width: 100%;"></div>
+        </div>
+        <!-- Zen stats bar -->
+        <div class="zen-bar" id="zenBar" style="display:none;">
+            <div class="zen-stat neu-flat">
+                <div class="zen-stat-val" id="zenLevel">1</div>
+                <div class="zen-stat-label">Level</div>
+            </div>
+            <div class="zen-stat neu-flat">
+                <div class="zen-stat-val" id="zenMoves">0</div>
+                <div class="zen-stat-label">Moves</div>
+            </div>
+            <div class="zen-stat neu-flat">
+                <div class="zen-stat-val" id="zenAccuracy">100%</div>
+                <div class="zen-stat-label">Accuracy</div>
+            </div>
+            <div class="zen-stat neu-flat">
+                <div class="zen-stat-val" id="zenScore">0</div>
+                <div class="zen-stat-label">Score</div>
+            </div>
+        </div>
+        <!-- Zen stars -->
+        <div class="stars-display" id="zenStars" style="display:none;">
+            <span class="star" id="star1">⭐</span>
+            <span class="star" id="star2">⭐</span>
+            <span class="star" id="star3">⭐</span>
+        </div>
+        <div class="score-bar" id="pvpScoreBar">
+            <div class="score-box neu-flat" id="p1Box">
+                <div class="score-label">P1 Wins</div>
+                <div class="score-num s-p1" id="p1Score">0</div>
+            </div>
+            <div class="score-box neu-flat">
+                <div class="score-label">Draws</div>
+                <div class="score-num s-draw" id="drawScore">0</div>
+            </div>
+            <div class="score-box neu-flat" id="p2Box">
+                <div class="score-label" id="p2Label">AI Wins</div>
+                <div class="score-num s-p2" id="p2Score">0</div>
+            </div>
+        </div>
+        <div class="powerup-bar" id="powerupBar" style="display:none;">
+            <button class="neu-btn powerup-btn btn-hint" onclick="useHint()" id="hintBtn">💡<span class="count" id="hintCount">3</span></button>
+            <button class="neu-btn powerup-btn" style="background: linear-gradient(135deg, var(--blue), var(--purple)); color: white;" onclick="usePeek()" id="peekBtn">👁️<span class="count" id="peekCount">2</span></button>
+            <button class="neu-btn powerup-btn" style="background: linear-gradient(135deg, var(--green), var(--teal)); color: white;" onclick="useFreeze()" id="freezeBtn">❄️<span class="count" id="freezeCount">1</span></button>
+        </div>
+        <div class="board-wrap neu-flat">
+            <div class="board" id="gameBoard"></div>
+        </div>
+        <div class="controls">
+            <button class="neu-btn ctrl-btn" onclick="doRestartRound()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                Restart
+            </button>
+            <button class="neu-btn ctrl-btn btn-primary" onclick="backToMenu()">Menu</button>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="page" id="statsPage">
+        <div class="game-header">
+            <button class="neu-btn icon-btn" onclick="showPage('menuPage')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
+            <div class="game-title">Statistics</div>
+            <div style="width: 38px;"></div>
+        </div>
+        <div class="neu-flat" style="padding: 14px; flex: 1; overflow-y: auto;">
+            <div class="stats-grid">
+                <div class="stat-card neu-pressed"><div class="stat-card-val" id="statGames">0</div><div class="stat-card-label">Games Played</div></div>
+                <div class="stat-card neu-pressed"><div class="stat-card-val" id="statWins">0</div><div class="stat-card-label">Total Wins</div></div>
+                <div class="stat-card neu-pressed"><div class="stat-card-val" id="statBest">--</div><div class="stat-card-label">Best Time</div></div>
+                <div class="stat-card neu-pressed"><div class="stat-card-val" id="statMatches">0</div><div class="stat-card-label">Total Matches</div></div>
+                <div class="stat-card neu-pressed"><div class="stat-card-val" id="statAccuracy">0%</div><div class="stat-card-label">Accuracy</div></div>
+                <div class="stat-card neu-pressed"><div class="stat-card-val" id="statStreak">0</div><div class="stat-card-label">Best Streak</div></div>
+            </div>
+            <div class="section-label">Achievements</div>
+            <div class="achievement-list" id="achievementList"></div>
+        </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="settingsPage">
+        <div class="game-header">
+            <button class="neu-btn icon-btn" onclick="showPage('menuPage')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
+            <div class="game-title">Settings</div>
+            <div style="width: 38px;"></div>
+        </div>
+        <div class="neu-flat" style="padding: 14px; flex: 1; overflow-y: auto;">
+            <div class="section-label">Gameplay</div>
+            <div class="settings-row neu-pressed">
+                <div><div class="settings-label">Sound Effects</div><div class="settings-desc">Audio feedback for actions</div></div>
+                <div class="toggle on" id="toggleSound" onclick="toggleSetting('sound')"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="settings-row neu-pressed">
+                <div><div class="settings-label">Music</div><div class="settings-desc">Background ambient music</div></div>
+                <div class="toggle" id="toggleMusic" onclick="toggleSetting('music')"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="settings-row neu-pressed">
+                <div><div class="settings-label">Vibration</div><div class="settings-desc">Haptic feedback on matches</div></div>
+                <div class="toggle on" id="toggleVibrate" onclick="toggleSetting('vibrate')"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="settings-row neu-pressed">
+                <div><div class="settings-label">Animations</div><div class="settings-desc">Smooth card transitions</div></div>
+                <div class="toggle on" id="toggleAnim" onclick="toggleSetting('anim')"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="section-label">Account</div>
+            <div class="settings-row neu-pressed">
+                <div><div class="settings-label">Reset Progress</div><div class="settings-desc">Clear all stats and achievements</div></div>
+                <button class="neu-btn" style="padding: 8px 16px; font-size: 0.7rem; color: var(--red);" onclick="resetProgress()">Reset</button>
+            </div>
+            <div class="section-label">About</div>
+            <div style="text-align: center; padding: 20px; color: var(--text-light); font-size: 0.75rem;">
+                <div style="font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 4px;">MemoMatch v2.1.0</div>
+                <div>Memory Battle Arena</div>
+                <div style="margin-top: 8px;">Built for PlayStore</div>
+                <div style="margin-top: 12px; display: flex; justify-content: center; gap: 12px;">
+                    <button class="neu-btn" style="padding: 8px 16px; font-size: 0.7rem;" onclick="shareApp()">📤 Share</button>
+                    <button class="neu-btn" style="padding: 8px 16px; font-size: 0.7rem;" onclick="rateApp()">⭐ Rate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY -->
+    <div class="overlay" id="overlay">
+        <div class="modal neu-flat">
+            <span class="modal-icon" id="mIcon">🏆</span>
+            <h2 class="modal-title" id="mTitle">Player 1 Wins!</h2>
+            <p class="modal-sub" id="mSub">Great memory!</p>
+            <div class="modal-stats">
+                <div class="m-stat neu-pressed"><div class="m-stat-label">P1 Pairs</div><div class="m-stat-val s-p1" id="mP1">0</div></div>
+                <div class="m-stat neu-pressed"><div class="m-stat-label">P2 Pairs</div><div class="m-stat-val s-p2" id="mP2">0</div></div>
+                <div class="m-stat neu-pressed"><div class="m-stat-label">Time</div><div class="m-stat-val" id="mTime">0s</div></div>
+            </div>
+            <button class="neu-btn modal-btn btn-primary" onclick="nextRound()">Next Round</button>
+            <button class="neu-btn modal-btn-secondary" onclick="backToMenu()">Main Menu</button>
+        </div>
+    </div>
+
+    <!-- ZEN LEVEL COMPLETE OVERLAY -->
+    <div class="overlay" id="zenOverlay">
+        <div class="modal neu-flat">
+            <span class="modal-icon" id="zIcon">🧘</span>
+            <h2 class="modal-title" id="zTitle">Level Complete!</h2>
+            <p class="modal-sub" id="zSub">Peaceful victory!</p>
+            <div class="modal-stats">
+                <div class="m-stat neu-pressed"><div class="m-stat-label">Moves</div><div class="m-stat-val" id="zMoves">0</div></div>
+                <div class="m-stat neu-pressed"><div class="m-stat-label">Accuracy</div><div class="m-stat-val" id="zAccuracy">0%</div></div>
+                <div class="m-stat neu-pressed"><div class="m-stat-label">Score</div><div class="m-stat-val" id="zScore">0</div></div>
+            </div>
+            <div class="stars-display" id="zStars" style="margin-bottom: 16px;">
+                <span class="star" id="zs1">⭐</span>
+                <span class="star" id="zs2">⭐</span>
+                <span class="star" id="zs3">⭐</span>
+            </div>
+            <button class="neu-btn modal-btn btn-primary" onclick="nextZenLevel()">Next Level</button>
+            <button class="neu-btn modal-btn-secondary" onclick="backToMenu()">Main Menu</button>
+        </div>
+    </div>
+
+    <!-- QUIT CONFIRM -->
+    <div class="overlay" id="quitOverlay">
+        <div class="modal neu-flat">
+            <span class="modal-icon">🚪</span>
+            <h2 class="modal-title">Quit Game?</h2>
+            <p class="modal-sub">Your progress will be lost.</p>
+            <button class="neu-btn modal-btn" style="background: linear-gradient(135deg, var(--red), #dc2626); color: white;" onclick="confirmQuitYes()">Quit</button>
+            <button class="neu-btn modal-btn-secondary" onclick="document.getElementById('quitOverlay').classList.remove('active')">Continue Playing</button>
+        </div>
+    </div>
+
+    <!-- TURN NOTIFICATION -->
+    <div class="turn-notify" id="turnNotify">
+        <div id="turnNotifyText">Player 2's Turn!</div>
+    </div>
+
+    <!-- ACHIEVEMENT TOAST -->
+    <div class="achievement-toast" id="achievementToast">
+        <span>🏆</span><span id="achievementText">Achievement Unlocked!</span>
+    </div>
+    <script>
+
+        // ==================== DATA ====================
+        const categories = {
+            animals: ['🦁','🐯','🐻','🐨','🐼','🐸','🐙','🦄','🦋','🦖','🦕','🐉','🐳','🦈','🦉','🦊','🐺','🐗','🐴','🦓'],
+            cars: ['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚜','🛵','🚲','🚁','🛸','🚀','🚂','🚢','🚤','✈️','🚡'],
+            sports: ['⚽','🏀','🏈','⚾','🎾','🏐','🏉','🎱','🏓','🏸','🥊','🥋','⛳','🏹','🛹','🛷','⛸️','🥌','🎯','🎳'],
+            people: ['👨‍🚀','👩‍🔬','👨‍🎨','👩‍🍳','👨‍🏫','👩‍⚕️','👨‍🌾','👩‍🚒','👨‍✈️','👩‍🎤','👨‍💼','👩‍🔧','🕵️','🧙','🥷','👮','🕵️‍♀️','👷','💂','🤴'],
+            items: ['📱','💻','⌚','📷','🎸','🎹','🎨','💎','🔑','🎁','🏆','📚','🧸','🕶️','🎩','👜','👓','🌂','☂️','🧳'],
+            musicians: ['🎸','🎹','🎺','🎻','🥁','🎤','🎧','🎼','🎷','🪕','🪘','🎙️','🪗','🎛️','🎚️','📯','🎵','🎶','🎧','🎤'],
+            leaders: ['👑','⚜️','🏛️','🦅','🦁','🐉','🌟','💫','⚡','🔱','🛡️','⚔️','🌍','🌎','🌏','🏰','🗽','🗿','⛩️','🕋'],
+            food: ['🍕','🍔','🍟','🌭','🍿','🧂','🥓','🥚','🧇','🥞','🧈','🍞','🥐','🥨','🥯','🥖','🧀','🥗','🥙','🥪'],
+            nature: ['🌲','🌵','🍄','🌷','🌹','🌻','🌺','🌸','🌼','🍁','🍂','🌿','🍀','🌾','🌴','🌳','🌱','🌵','🎋','🎍'],
+            space: ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘','⭐','🌟','✨','☄️','🪐','🌌','🛰️','🚀','👽','☄️','🌠','🔭'],
+            flags: ['🇺🇸','🇬🇧','🇫🇷','🇩🇪','🇮🇹','🇪🇸','🇨🇦','🇦🇺','🇯🇵','🇰🇷','🇧🇷','🇮🇳','🇨🇳','🇷🇺','🇲🇽','🇿🇦','🇪🇬','🇳🇬','🇰🇪','🇬🇷'],
+            fantasy: ['🧚','🧜','🧞','🧝','🧟','🧛','🧌','🦄','🐉','🧙','🧝‍♀️','🧚‍♂️','🧜‍♀️','🧞‍♂️','🧟‍♀️','🧛‍♀️','🧌','🦄','🐲','🧙‍♀️'],
+            music: ['🎵','🎶','🎼','🎹','🎸','🎺','🎻','🥁','🎤','🎧','🎷','🪕','🪘','🎙️','🪗','📻','📱','💿','📀','🎚️'],
+            tech: ['💻','📱','⌚','📷','🖥️','🖨️','⌨️','🖱️','💾','💿','📀','📼','📹','📽️','🎥','📡','🔋','🔌','💡','🕹️'],
+            travel: ['✈️','🚂','🚢','🚌','🚕','🚲','🛵','🏍️','🚁','🛸','🚀','🚤','⛵','🛶','🚡','🚃','🚋','🚞','🚝','🚄'],
+            fruits: ['🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🍍','🥝','🥥','🥑','🍆','🥕','🌽','🌶️'],
+            drinks: ['☕','🍵','🧃','🥤','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🧊','🥛','🍼','🫖','🏺','🫗','🥤'],
+            weather: ['☀️','🌤️','⛅','🌥️','☁️','🌦️','🌧️','⛈️','🌩️','🌨️','❄️','🌬️','💨','🌪️','🌫️','🌈','☔','⚡','❄️','☃️'],
+            buildings: ['🏠','🏡','🏢','🏣','🏤','🏥','🏦','🏨','🏩','🏪','🏫','🏬','🏭','🏯','🏰','💒','🗼','🗽','⛪','🕌'],
+            hobbies: ['🎨','🎭','🎪','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🪕','🎻','🎲','🎯','🎳','🎮','🎰','🧩']
+        };
+
+        const catMeta = [
+            {k:'animals',i:'🦁',n:'Animals'},{k:'cars',i:'🚗',n:'Cars'},
+            {k:'sports',i:'⚽',n:'Sports'},{k:'people',i:'👨‍🚀',n:'People'},
+            {k:'items',i:'📱',n:'Items'},{k:'musicians',i:'🎸',n:'Music'},
+            {k:'leaders',i:'👑',n:'Leaders'},{k:'food',i:'🍕',n:'Food'},
+            {k:'nature',i:'🌲',n:'Nature'},{k:'space',i:'🌕',n:'Space'},
+            {k:'flags',i:'🇺🇸',n:'Flags'},{k:'fantasy',i:'🧚',n:'Fantasy'},
+            {k:'music',i:'🎵',n:'Notes'},{k:'tech',i:'💻',n:'Tech'},
+            {k:'travel',i:'✈️',n:'Travel'},{k:'fruits',i:'🍎',n:'Fruits'},
+            {k:'drinks',i:'☕',n:'Drinks'},{k:'weather',i:'☀️',n:'Weather'},
+            {k:'buildings',i:'🏠',n:'Buildings'},{k:'hobbies',i:'🎨',n:'Hobbies'}
+        ];
+
+        const diffSettings = {
+            baby: { pairs: 2, cols: 'baby', time: 0 },
+            easy: { pairs: 8, cols: 'easy', time: 120 },
+            normal: { pairs: 10, cols: 'normal', time: 180 },
+            hard: { pairs: 15, cols: 'hard', time: 240 },
+            expert: { pairs: 20, cols: 'expert', time: 300 },
+            insane: { pairs: 25, cols: 'insane', time: 360 }
+        };
+
+        // ==================== STATE ====================
+        let gameMode = 'pvc';
+        let difficulty = 'easy';
+        let currentCat = 'animals';
+        let cards = [];
+        let flipped = [];
+        let matchedCount = 0;
+        let totalPairs = 8;
+        let lockBoard = false;
+        let currentPlayer = 'P1';
+        let p1Wins = 0, p2Wins = 0, draws = 0;
+        let p1Pairs = 0, p2Pairs = 0;
+        let roundActive = false;
+        let soundOn = true;
+        let musicOn = false;
+        let vibrateOn = true;
+        let animOn = true;
+        let roundStarter = 'P1';
+        let combo = 0;
+        let roundTime = 0;
+        let timerInterval = null;
+        let gameStartTime = 0;
+        let hints = 3, peeks = 2, freezes = 1;
+        let isFrozen = false;
+        let roundMisses = 0;
+        let aiMemory = {};
+        let aiMemoryOrder = [];
+        let playedCategories = new Set();
+
+        // Zen mode state
+        let zenLevel = 1;
+        let zenMoves = 0;
+        let zenScore = 0;
+        let zenTotalMoves = 0;
+        let zenCorrectMoves = 0;
+        let zenConsecutiveMatches = 0;
+        let zenBestLevel = 1;
+        let zenTotalScore = 0;
+
+        let stats = {
+            gamesPlayed: 0, totalWins: 0, bestTime: Infinity,
+            totalMatches: 0, totalAttempts: 0, bestStreak: 0, currentStreak: 0,
+            achievements: {}, zenBestLevel: 1, zenTotalScore: 0
+        };
+
+        const achievements = [
+            { id: 'first_win', name: 'First Victory', desc: 'Win your first game', icon: '🏆' },
+            { id: 'streak_3', name: 'On Fire', desc: 'Win 3 games in a row', icon: '🔥' },
+            { id: 'streak_10', name: 'Unstoppable', desc: 'Win 10 games in a row', icon: '⚡' },
+            { id: 'speed_demon', name: 'Speed Demon', desc: 'Win in under 30 seconds', icon: '💨' },
+            { id: 'perfect_game', name: 'Perfect Game', desc: 'Win without a single miss', icon: '💎' },
+            { id: 'collector', name: 'Collector', desc: 'Play all 20 categories', icon: '📚' },
+            { id: 'insane_winner', name: 'Insane Mode', desc: 'Win on Insane difficulty', icon: '🤯' },
+            { id: 'zen_master', name: 'Zen Master', desc: 'Reach Zen Level 10', icon: '🧘' },
+            { id: 'combo_5', name: 'Combo King', desc: 'Get a 5x combo', icon: '👑' },
+            { id: 'veteran', name: 'Veteran', desc: 'Play 100 games', icon: '🎖️' },
+            { id: 'zen_novice', name: 'Zen Novice', desc: 'Reach Zen Level 3', icon: '🌱' },
+            { id: 'zen_warrior', name: 'Zen Warrior', desc: 'Reach Zen Level 5', icon: '⚔️' },
+            { id: 'zen_perfect', name: 'Zen Perfection', desc: 'Complete a Zen level with 100% accuracy', icon: '✨' }
+        ];
+
+        let audioCtx = null; try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { audioCtx = null; }
+
+        // ==================== AUDIO ====================
+        function playSound(type) {
+            if (!soundOn || !audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                const tone = (f, t, g, tp, dur) => {
+                    const o = audioCtx.createOscillator();
+                    const gn = audioCtx.createGain();
+                    o.connect(gn); gn.connect(audioCtx.destination);
+                    o.type = tp || 'sine';
+                    o.frequency.setValueAtTime(f, now + t);
+                    gn.gain.setValueAtTime(g, now + t);
+                    gn.gain.exponentialRampToValueAtTime(0.01, now + t + (dur || 0.12));
+                    o.start(now + t); o.stop(now + t + (dur || 0.12));
+                };
+                if (type === 'flip') tone(700, 0, 0.08);
+                else if (type === 'match') { tone(523, 0, 0.1); tone(659, 0.08, 0.1); tone(784, 0.16, 0.1); }
+                else if (type === 'miss') tone(250, 0, 0.06, 'sawtooth');
+                else if (type === 'win') { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.08, 0.1)); }
+                else if (type === 'combo') { tone(880, 0, 0.12); tone(1100, 0.1, 0.12); }
+                else if (type === 'powerup') { tone(600, 0, 0.08); tone(900, 0.1, 0.08); tone(1200, 0.2, 0.08); }
+                else if (type === 'levelup') { tone(440, 0, 0.1); tone(554, 0.1, 0.1); tone(659, 0.2, 0.1); tone(880, 0.3, 0.15); }
+                else if (type === 'turn') { tone(523, 0, 0.08); tone(659, 0.12, 0.08); }
+            } catch(e) {}
+        }
+
+        function doVibrate(pattern) {
+            if (vibrateOn && navigator.vibrate) navigator.vibrate(pattern);
+        }
+
+        function toggleSound() {
+            soundOn = !soundOn;
+            document.getElementById('soundWave').style.display = soundOn ? 'block' : 'none';
+            document.getElementById('soundMute').style.display = soundOn ? 'none' : 'block';
+            saveSettings();
+        }
+
+        // ==================== STORAGE ====================
+        function loadStats() {
+            try {
+                const s = localStorage.getItem('mm_stats');
+                if (s) {
+                    const parsed = JSON.parse(s);
+                    Object.assign(stats, parsed);
+                }
+                const pc = localStorage.getItem('mm_cats');
+                if (pc) playedCategories = new Set(JSON.parse(pc));
+                const sett = localStorage.getItem('mm_settings');
+                if (sett) {
+                    const set = JSON.parse(sett);
+                    soundOn = set.sound !== false;
+                    musicOn = set.music === true;
+                    vibrateOn = set.vibrate !== false;
+                    animOn = set.anim !== false;
+                }
+            } catch(e) {}
+        }
+
+        function saveStats() {
+            try {
+                localStorage.setItem('mm_stats', JSON.stringify(stats));
+                localStorage.setItem('mm_cats', JSON.stringify([...playedCategories]));
+            } catch(e) {}
+        }
+
+        function saveSettings() {
+            try {
+                localStorage.setItem('mm_settings', JSON.stringify({
+                    sound: soundOn, music: musicOn, vibrate: vibrateOn, anim: animOn
+                }));
+            } catch(e) {}
+        }
+
+        function resetProgress() {
+            if (!confirm('Are you sure? All progress will be permanently deleted.')) return;
+            stats = { gamesPlayed: 0, totalWins: 0, bestTime: Infinity, totalMatches: 0, totalAttempts: 0, bestStreak: 0, currentStreak: 0, achievements: {}, zenBestLevel: 1, zenTotalScore: 0 };
+            playedCategories = new Set();
+            zenLevel = 1; zenBestLevel = 1; zenTotalScore = 0;
+            saveStats();
+            updateMenuStats();
+            renderAchievements();
+        }
+
+        // ==================== MENU ====================
+        function initMenu() {
+            const grid = document.getElementById('catGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            catMeta.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = 'neu-btn cat-btn' + (c.k === currentCat ? ' active' : '');
+                btn.dataset.cat = c.k;
+                btn.onclick = function() { selectCat(c.k); };
+                btn.innerHTML = '<span class="c-icon">' + c.i + '</span><span>' + c.n + '</span>';
+                grid.appendChild(btn);
+            });
+            updateMenuStats();
+            updateSettingsUI();
+        }
+
+        function selectCat(k) {
+            currentCat = k;
+            document.querySelectorAll('.cat-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.cat === k);
+            });
+        }
+
+        function setMode(m) {
+            gameMode = m;
+            document.getElementById('btnPvc').classList.toggle('active', m === 'pvc');
+            document.getElementById('btnPvp').classList.toggle('active', m === 'pvp');
+            document.getElementById('btnZen').classList.toggle('active', m === 'zen');
+            document.getElementById('btnTime').classList.toggle('active', m === 'time');
+        }
+
+        function setDiff(d) {
+            difficulty = d;
+            ['baby','easy','normal','hard','expert','insane'].forEach(x => {
+                const el = document.getElementById('btn' + x.charAt(0).toUpperCase() + x.slice(1));
+                if (el) el.classList.toggle('active', d === x);
+            });
+        }
+
+        function updateMenuStats() {
+            const elGames = document.getElementById('menuTotalGames');
+            const elWinRate = document.getElementById('menuWinRate');
+            const elBest = document.getElementById('menuBestTime');
+            const elAch = document.getElementById('menuAchievements');
+            if (elGames) elGames.textContent = stats.gamesPlayed;
+            if (elWinRate) elWinRate.textContent = stats.gamesPlayed > 0 ? Math.round((stats.totalWins / stats.gamesPlayed) * 100) + '%' : '0%';
+            if (elBest) elBest.textContent = stats.bestTime === Infinity ? '--' : stats.bestTime + 's';
+            if (elAch) elAch.textContent = Object.keys(stats.achievements).length + '/' + achievements.length;
+        }
+
+        // ==================== NAVIGATION ====================
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const target = document.getElementById(id);
+            if (target) target.classList.add('active');
+            if (id === 'statsPage') { updateStatsPage(); renderAchievements(); }
+        }
+
+        function launchGame() {
+            totalPairs = diffSettings[difficulty].pairs;
+            showPage('gamePage');
+            document.getElementById('p2Label').textContent = gameMode === 'pvc' ? 'AI Wins' : (gameMode === 'zen' ? 'Moves' : 'P2 Wins');
+            document.getElementById('timerBar').style.display = (gameMode === 'time' || diffSettings[difficulty].time > 0) ? 'block' : 'none';
+            // Hide powerups in PvP mode, show in other modes
+            document.getElementById('powerupBar').style.display = (gameMode === 'pvp') ? 'none' : 'flex';
+            // Show/hide Zen UI
+            const isZen = gameMode === 'zen';
+            document.getElementById('zenBar').style.display = isZen ? 'flex' : 'none';
+            document.getElementById('zenStars').style.display = isZen ? 'flex' : 'none';
+            document.getElementById('pvpScoreBar').style.display = isZen ? 'none' : 'grid';
+            document.getElementById('turnPill').style.display = isZen ? 'none' : 'flex';
+            if (isZen) {
+                updateZenUI();
+                updateZenStars();
+            }
+            doRestartRound();
+        }
+
+        function backToMenu() {
+            clearInterval(timerInterval);
+            showPage('menuPage');
+            document.getElementById('overlay').classList.remove('active');
+            document.getElementById('quitOverlay').classList.remove('active');
+            document.getElementById('zenOverlay').classList.remove('active');
+        }
+
+        function confirmQuit() {
+            document.getElementById('quitOverlay').classList.add('active');
+        }
+
+        function confirmQuitYes() {
+            clearInterval(timerInterval);
+            backToMenu();
+        }
+
+        // ==================== SETTINGS ====================
+        function toggleSetting(key) {
+            if (key === 'sound') soundOn = !soundOn;
+            if (key === 'music') musicOn = !musicOn;
+            if (key === 'vibrate') vibrateOn = !vibrateOn;
+            if (key === 'anim') animOn = !animOn;
+            updateSettingsUI();
+            saveSettings();
+        }
+
+        function updateSettingsUI() {
+            const tSound = document.getElementById('toggleSound');
+            const tMusic = document.getElementById('toggleMusic');
+            const tVibrate = document.getElementById('toggleVibrate');
+            const tAnim = document.getElementById('toggleAnim');
+            if (tSound) tSound.classList.toggle('on', soundOn);
+            if (tMusic) tMusic.classList.toggle('on', musicOn);
+            if (tVibrate) tVibrate.classList.toggle('on', vibrateOn);
+            if (tAnim) tAnim.classList.toggle('on', animOn);
+        }
+
+        // ==================== STATS & ACHIEVEMENTS ====================
+        function updateStatsPage() {
+            document.getElementById('statGames').textContent = stats.gamesPlayed;
+            document.getElementById('statWins').textContent = stats.totalWins;
+            document.getElementById('statBest').textContent = stats.bestTime === Infinity ? '--' : stats.bestTime + 's';
+            document.getElementById('statMatches').textContent = stats.totalMatches;
+            document.getElementById('statAccuracy').textContent = stats.totalAttempts > 0 ? Math.round((stats.totalMatches / stats.totalAttempts) * 100) + '%' : '0%';
+            document.getElementById('statStreak').textContent = stats.bestStreak;
+        }
+
+        function renderAchievements() {
+            const list = document.getElementById('achievementList');
+            if (!list) return;
+            list.innerHTML = '';
+            achievements.forEach(a => {
+                const unlocked = stats.achievements[a.id];
+                const div = document.createElement('div');
+                div.className = 'achievement-item neu-flat' + (unlocked ? ' unlocked' : '');
+                div.innerHTML = '<div class="achievement-icon neu-pressed">' + a.icon + '</div><div class="achievement-info"><div class="achievement-name">' + a.name + '</div><div class="achievement-desc">' + a.desc + '</div></div>' + (unlocked ? '<span style="color: var(--green); font-size: 1.2rem;">✓</span>' : '');
+                list.appendChild(div);
+            });
+        }
+
+        function unlockAchievement(id) {
+            if (stats.achievements[id]) return;
+            stats.achievements[id] = true;
+            saveStats();
+            const a = achievements.find(x => x.id === id);
+            if (a) showAchievementToast(a.name);
+        }
+
+        function showAchievementToast(name) {
+            const toast = document.getElementById('achievementToast');
+            const txt = document.getElementById('achievementText');
+            if (txt) txt.textContent = 'Unlocked: ' + name;
+            if (toast) toast.classList.add('show');
+            playSound('win');
+            setTimeout(() => { if (toast) toast.classList.remove('show'); }, 3000);
+        }
+
+        function checkAchievements(winner, timeTaken) {
+            playedCategories.add(currentCat);
+            if (winner === 'P1') {
+                unlockAchievement('first_win');
+                stats.currentStreak++;
+                if (stats.currentStreak >= 3) unlockAchievement('streak_3');
+                if (stats.currentStreak >= 10) unlockAchievement('streak_10');
+                if (timeTaken < 30) unlockAchievement('speed_demon');
+                if (roundMisses === 0) unlockAchievement('perfect_game');
+                if (difficulty === 'insane') unlockAchievement('insane_winner');
+            } else {
+                stats.currentStreak = 0;
+            }
+            if (combo >= 5) unlockAchievement('combo_5');
+            if (stats.gamesPlayed >= 100) unlockAchievement('veteran');
+            if (playedCategories.size >= 20) unlockAchievement('collector');
+            if (stats.currentStreak > stats.bestStreak) stats.bestStreak = stats.currentStreak;
+            // Zen achievements
+            if (zenLevel >= 3) unlockAchievement('zen_novice');
+            if (zenLevel >= 5) unlockAchievement('zen_warrior');
+            if (zenLevel >= 10) unlockAchievement('zen_master');
+        }
+
+        // ==================== ZEN MODE ====================
+        function getZenPairsForLevel() {
+            // Level 1-2: easy (8 pairs), 3-4: normal (10), 5-6: hard (15), 7-8: expert (20), 9+: insane (25)
+            if (zenLevel <= 2) return 8;
+            if (zenLevel <= 4) return 10;
+            if (zenLevel <= 6) return 15;
+            if (zenLevel <= 8) return 20;
+            return 25;
+        }
+
+        function getZenColsForLevel() {
+            if (zenLevel <= 2) return 'easy';
+            if (zenLevel <= 4) return 'normal';
+            if (zenLevel <= 6) return 'hard';
+            if (zenLevel <= 8) return 'expert';
+            return 'insane';
+        }
+
+        function getZenTimeForLevel() {
+            if (zenLevel <= 2) return 120;
+            if (zenLevel <= 4) return 150;
+            if (zenLevel <= 6) return 180;
+            if (zenLevel <= 8) return 240;
+            return 300;
+        }
+
+        function updateZenUI() {
+            const acc = zenTotalMoves > 0 ? Math.round((zenCorrectMoves / zenTotalMoves) * 100) : 100;
+            document.getElementById('zenLevel').textContent = zenLevel;
+            document.getElementById('zenMoves').textContent = zenMoves;
+            document.getElementById('zenAccuracy').textContent = acc + '%';
+            document.getElementById('zenScore').textContent = zenScore;
+        }
+
+        function updateZenStars() {
+            const acc = zenTotalMoves > 0 ? (zenCorrectMoves / zenTotalMoves) : 1;
+            const stars = acc >= 0.9 ? 3 : acc >= 0.7 ? 2 : 1;
+            for (let i = 1; i <= 3; i++) {
+                const el = document.getElementById('star' + i);
+                if (el) el.classList.toggle('earned', i <= stars);
+            }
+        }
+
+        function calculateZenStars() {
+            const acc = zenTotalMoves > 0 ? (zenCorrectMoves / zenTotalMoves) : 1;
+            return acc >= 0.9 ? 3 : acc >= 0.7 ? 2 : 1;
+        }
+
+        function nextZenLevel() {
+            document.getElementById('zenOverlay').classList.remove('active');
+            zenLevel++;
+            if (zenLevel > zenBestLevel) {
+                zenBestLevel = zenLevel;
+                stats.zenBestLevel = zenBestLevel;
+                saveStats();
+            }
+            zenMoves = 0;
+            zenTotalMoves = 0;
+            zenCorrectMoves = 0;
+            zenConsecutiveMatches = 0;
+            updateZenUI();
+            updateZenStars();
+            doRestartRound();
+        }
+
+        // ==================== AI ====================
+        function aiObserve(index) {
+            if (gameMode !== 'pvc') return;
+            if (cards[index] && cards[index].matched) return;
+            var attention = difficulty === 'baby' ? 0.2 : difficulty === 'easy' ? 0.4 : difficulty === 'normal' ? 0.7 : difficulty === 'hard' ? 0.85 : 0.95;
+            if (Math.random() > attention) return;
+            if (aiMemory[index] !== cards[index].emoji) {
+                aiMemory[index] = cards[index].emoji;
+                aiMemoryOrder.push(index);
+            }
+            var limit = difficulty === 'baby' ? 1 : difficulty === 'easy' ? 3 : difficulty === 'normal' ? 5 : difficulty === 'hard' ? 8 : 12;
+            while (aiMemoryOrder.length > limit) {
+                var old = aiMemoryOrder.shift();
+                delete aiMemory[old];
+            }
+        }
+
+        function aiForget() {
+            var decay = difficulty === 'baby' ? 0.7 : difficulty === 'easy' ? 0.5 : difficulty === 'normal' ? 0.25 : difficulty === 'hard' ? 0.1 : 0.03;
+            aiMemoryOrder = aiMemoryOrder.filter(function(idx) {
+                if (cards[idx] && cards[idx].matched) return false;
+                if (Math.random() < decay) { delete aiMemory[idx]; return false; }
+                return true;
+            });
+        }
+
+        // ==================== TURN NOTIFICATION ====================
+        function showTurnNotify(text, type) {
+            const notify = document.getElementById('turnNotify');
+            const txt = document.getElementById('turnNotifyText');
+            if (!notify || !txt) return;
+            txt.textContent = text;
+            notify.className = 'turn-notify' + (type ? ' ' + type : '');
+            notify.classList.add('show');
+            playSound('turn');
+            setTimeout(() => { notify.classList.remove('show'); }, 1200);
+        }
+
+        // ==================== GAME LOGIC ====================
+        function doRestartRound() {
+            currentPlayer = roundStarter;
+            p1Pairs = 0; p2Pairs = 0; matchedCount = 0; flipped = [];
+            lockBoard = false; aiMemory = {}; aiMemoryOrder = [];
+            roundActive = true; combo = 0; roundMisses = 0; isFrozen = false;
+            hints = 3; peeks = 2; freezes = 1;
+            updatePowerupUI();
+            gameStartTime = Date.now();
+
+            // Zen mode: use level-based settings
+            let pairsToUse = totalPairs;
+            let colsToUse = diffSettings[difficulty].cols;
+            let timeToUse = diffSettings[difficulty].time;
+
+            if (gameMode === 'zen') {
+                pairsToUse = getZenPairsForLevel();
+                colsToUse = getZenColsForLevel();
+                timeToUse = getZenTimeForLevel();
+                zenMoves = 0;
+                zenTotalMoves = 0;
+                zenCorrectMoves = 0;
+                zenConsecutiveMatches = 0;
+                updateZenUI();
+                updateZenStars();
+            }
+
+            if (timeToUse > 0 || gameMode === 'time') {
+                roundTime = timeToUse || 120;
+                startTimer();
+            }
+
+            var pool = categories[currentCat].slice();
+            shuffle(pool);
+            var chosen = pool.slice(0, pairsToUse);
+            cards = [];
+            for (var i = 0; i < chosen.length; i++) {
+                cards.push({ id: i * 2, emoji: chosen[i], matched: false, el: null });
+                cards.push({ id: i * 2 + 1, emoji: chosen[i], matched: false, el: null });
+            }
+            shuffle(cards);
+
+            var board = document.getElementById('gameBoard');
+            board.className = 'board ' + colsToUse;
+            board.innerHTML = '';
+            for (var j = 0; j < cards.length; j++) {
+                var el = document.createElement('div');
+                el.className = 'card remaining';
+                if (!animOn) el.style.transition = 'none';
+                el.dataset.index = j;
+                el.innerHTML = '<div class="card-face card-front"></div><div class="card-face card-back">' + cards[j].emoji + '</div>';
+                el.onclick = (function(idx) { return function() { onCardClick(idx); }; })(j);
+                cards[j].el = el;
+                board.appendChild(el);
+            }
+
+            updateTurnUI();
+            updateScoreUI();
+            highlightActivePlayer();
+            fitBoard();
+
+            if (gameMode === 'pvc' && currentPlayer === 'AI') {
+                lockBoard = true;
+                setTimeout(aiTurn, 800);
+            }
+        }
+
+        function fitBoard() {
+            var board = document.getElementById('gameBoard');
+            var wrap = document.querySelector('.board-wrap');
+            if (!board || !wrap) return;
+
+            var wrapRect = wrap.getBoundingClientRect();
+            var availW = wrapRect.width - 8;
+            var availH = wrapRect.height - 8;
+            var cardCount = cards.length;
+
+            var cols, rows;
+            if (board.classList.contains('baby')) { cols = 2; rows = 2; }
+            else if (board.classList.contains('easy')) { cols = 4; rows = 4; }
+            else if (board.classList.contains('normal')) { cols = 5; rows = 4; }
+            else if (board.classList.contains('hard')) { cols = 6; rows = 5; }
+            else if (board.classList.contains('expert')) { cols = 8; rows = 5; }
+            else if (board.classList.contains('insane')) { cols = 10; rows = 5; }
+            else { cols = 4; rows = 4; }
+
+            if (board.classList.contains('insane')) {
+                var testW = Math.floor((availW - (cols - 1) * 3) / cols);
+                var testH = Math.floor((availH - (rows - 1) * 3) / rows);
+                if (testW < 28 || testH < 28) {
+                    cols = 8; rows = 7;
+                    board.style.gridTemplateColumns = 'repeat(8, 1fr)';
+                }
+            }
+
+            if (board.classList.contains('expert')) {
+                var testW2 = Math.floor((availW - (cols - 1) * 4) / cols);
+                var testH2 = Math.floor((availH - (rows - 1) * 4) / rows);
+                if (testW2 < 32 || testH2 < 32) {
+                    cols = 5; rows = 8;
+                    board.style.gridTemplateColumns = 'repeat(5, 1fr)';
+                }
+            }
+
+            var gap = board.classList.contains('insane') ? 3 : board.classList.contains('expert') ? 4 : 5;
+            var cardW = Math.floor((availW - (cols - 1) * gap) / cols);
+            var cardH = Math.floor((availH - (rows - 1) * gap) / rows);
+            var cardSize = Math.min(cardW, cardH);
+
+            var minSize = board.classList.contains('insane') ? 28 : board.classList.contains('expert') ? 32 : 40;
+            if (cardSize < minSize) {
+                gap = 2;
+                cardW = Math.floor((availW - (cols - 1) * gap) / cols);
+                cardH = Math.floor((availH - (rows - 1) * gap) / rows);
+                cardSize = Math.min(cardW, cardH);
+                board.style.gap = gap + 'px';
+            }
+
+            var allCards = board.querySelectorAll('.card');
+            for (var i = 0; i < allCards.length; i++) {
+                allCards[i].style.width = cardSize + 'px';
+                allCards[i].style.height = cardSize + 'px';
+                allCards[i].style.fontSize = Math.floor(cardSize * 0.55) + 'px';
+            }
+
+            var totalW = cols * cardSize + (cols - 1) * gap;
+            var totalH = rows * cardSize + (rows - 1) * gap;
+            board.style.width = totalW + 'px';
+            board.style.height = totalH + 'px';
+            board.style.maxWidth = 'none';
+        }
+
+        function shuffle(arr) {
+            for (var i = arr.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = arr[i]; arr[i] = arr[j]; arr[j] = temp;
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            var totalTime = roundTime;
+            var fill = document.getElementById('timerFill');
+            if (fill) { fill.style.width = '100%'; fill.className = 'timer-fill'; }
+            timerInterval = setInterval(function() {
+                if (!roundActive || isFrozen) return;
+                roundTime--;
+                var pct = (roundTime / totalTime) * 100;
+                if (fill) {
+                    fill.style.width = pct + '%';
+                    fill.className = 'timer-fill' + (pct < 15 ? ' danger' : pct < 40 ? ' warning' : '');
+                }
+                if (roundTime <= 0) {
+                    clearInterval(timerInterval);
+                    endRound(true);
+                }
+            }, 1000);
+        }
+
+        function onCardClick(index) {
+            if (!roundActive || lockBoard || isFrozen) return;
+            var c = cards[index];
+            if (c.matched || c.el.classList.contains('flipped')) return;
+            if (gameMode === 'zen') {
+                revealCard(index); flipped.push(index); playSound('flip');
+                zenMoves++;
+                zenTotalMoves++;
+                updateZenUI();
+                if (flipped.length === 2) { lockBoard = true; checkPairZen(); }
+                return;
+            }
+            if (gameMode === 'pvc' && currentPlayer === 'AI') return;
+            revealCard(index); flipped.push(index); playSound('flip');
+            if (flipped.length === 2) { lockBoard = true; checkPair(); }
+        }
+
+        function revealCard(i) {
+            cards[i].el.classList.add('flipped');
+            aiObserve(i);
+        }
+
+        function hideCard(i) {
+            cards[i].el.classList.remove('flipped');
+        }
+
+        function checkPair() {
+            var a = flipped[0], b = flipped[1];
+            var match = cards[a].emoji === cards[b].emoji;
+            stats.totalAttempts++;
+            if (match) {
+                combo++;
+                setTimeout(function() {
+                    cards[a].el.classList.add('matched');
+                    cards[b].el.classList.add('matched');
+                    cards[a].el.classList.remove('remaining');
+                    cards[b].el.classList.remove('remaining');
+                    cards[a].matched = true; cards[b].matched = true;
+                    matchedCount++; stats.totalMatches++;
+                    playSound(combo >= 3 ? 'combo' : 'match');
+                    doVibrate(50);
+                    showCombo(cards[a].el);
+                    if (currentPlayer === 'P1') p1Pairs++; else p2Pairs++;
+                    updateScoreUI(); flipped = []; lockBoard = false;
+                    if (matchedCount === totalPairs) { clearInterval(timerInterval); endRound(false); }
+                    else if (gameMode === 'pvc' && currentPlayer === 'AI') setTimeout(aiTurn, 500);
+                }, 350);
+            } else {
+                combo = 0; roundMisses++;
+                setTimeout(function() {
+                    playSound('miss'); hideCard(a); hideCard(b);
+                    flipped = []; switchTurn();
+                }, 700);
+            }
+        }
+
+        function checkPairZen() {
+            var a = flipped[0], b = flipped[1];
+            var match = cards[a].emoji === cards[b].emoji;
+            stats.totalAttempts++;
+            if (match) {
+                combo++;
+                zenCorrectMoves++;
+                zenConsecutiveMatches++;
+                // Score: base 100 + consecutive bonus + combo bonus
+                var baseScore = 100;
+                var consecBonus = zenConsecutiveMatches * 20;
+                var comboBonus = combo >= 3 ? combo * 30 : 0;
+                var levelBonus = zenLevel * 10;
+                zenScore += baseScore + consecBonus + comboBonus + levelBonus;
+                setTimeout(function() {
+                    cards[a].el.classList.add('matched'); cards[b].el.classList.add('matched');
+                    cards[a].el.classList.remove('remaining'); cards[b].el.classList.remove('remaining');
+                    cards[a].matched = true; cards[b].matched = true;
+                    matchedCount++; stats.totalMatches++;
+                    playSound(combo >= 3 ? 'combo' : 'match');
+                    doVibrate(50); showCombo(cards[a].el);
+                    p1Pairs++; updateScoreUI(); flipped = []; lockBoard = false;
+                    updateZenUI();
+                    updateZenStars();
+                    if (matchedCount === totalPairs) { clearInterval(timerInterval); endZenLevel(); }
+                }, 350);
+            } else {
+                combo = 0;
+                zenConsecutiveMatches = 0;
+                setTimeout(function() { playSound('miss'); hideCard(a); hideCard(b); flipped = []; lockBoard = false; updateZenUI(); }, 700);
+            }
+        }
+
+        function showCombo(el) {
+            if (combo < 2) return;
+            var txt = document.createElement('div');
+            txt.className = 'combo-text';
+            txt.textContent = combo + 'x COMBO!';
+            txt.style.color = combo >= 5 ? '#facc15' : '#4ade80';
+            var rect = el.getBoundingClientRect();
+            txt.style.left = rect.left + rect.width / 2 - 20 + 'px';
+            txt.style.top = rect.top + 'px';
+            document.body.appendChild(txt);
+            setTimeout(function() { txt.remove(); }, 1000);
+        }
+
+        function switchTurn() {
+            var prevPlayer = currentPlayer;
+            currentPlayer = currentPlayer === 'P1' ? (gameMode === 'pvc' ? 'AI' : 'P2') : 'P1';
+            updateTurnUI(); highlightActivePlayer(); lockBoard = false;
+            // Show turn notification only for PvP mode (not AI)
+            if (gameMode === 'pvp') {
+                var notifyText = currentPlayer === 'P1' ? "Player 1's Turn!" : "Player 2's Turn!";
+                var notifyClass = currentPlayer === 'P1' ? '' : 'p2-notify';
+                showTurnNotify(notifyText, notifyClass);
+            }
+            if (gameMode === 'pvc' && currentPlayer === 'AI') {
+                lockBoard = true;
+                setTimeout(aiTurn, 700);
+            }
+        }
+
+        function updateTurnUI() {
+            var pill = document.getElementById('turnPill');
+            var text = document.getElementById('turnText');
+            if (!pill || !text) return;
+            if (gameMode === 'zen') {
+                text.textContent = 'Zen Mode - Find all pairs';
+                pill.className = 'turn-pill neu-pressed p1';
+                return;
+            }
+            if (currentPlayer === 'P1') {
+                text.textContent = "Player 1's Turn";
+                pill.className = 'turn-pill neu-pressed p1';
+            } else if (currentPlayer === 'P2') {
+                text.textContent = "Player 2's Turn";
+                pill.className = 'turn-pill neu-pressed p2';
+            } else {
+                text.textContent = "Computer's Turn";
+                pill.className = 'turn-pill neu-pressed ai';
+            }
+        }
+
+        function highlightActivePlayer() {
+            var p1 = document.getElementById('p1Box');
+            var p2 = document.getElementById('p2Box');
+            if (p1) p1.classList.toggle('active', currentPlayer === 'P1');
+            if (p2) p2.classList.toggle('active', currentPlayer !== 'P1' && gameMode !== 'zen');
+        }
+
+        function updateScoreUI() {
+            var s1 = document.getElementById('p1Score');
+            var s2 = document.getElementById('p2Score');
+            var sd = document.getElementById('drawScore');
+            if (s1) s1.textContent = p1Wins;
+            if (s2) s2.textContent = p2Wins;
+            if (sd) sd.textContent = draws;
+        }
+
+        // ==================== POWER-UPS ====================
+        function updatePowerupUI() {
+            var hC = document.getElementById('hintCount');
+            var pC = document.getElementById('peekCount');
+            var fC = document.getElementById('freezeCount');
+            var hB = document.getElementById('hintBtn');
+            var pB = document.getElementById('peekBtn');
+            var fB = document.getElementById('freezeBtn');
+            if (hC) hC.textContent = hints;
+            if (pC) pC.textContent = peeks;
+            if (fC) fC.textContent = freezes;
+            if (hB) hB.disabled = hints <= 0;
+            if (pB) pB.disabled = peeks <= 0;
+            if (fB) fB.disabled = freezes <= 0;
+        }
+
+        function useHint() {
+            if (hints <= 0 || !roundActive || lockBoard) return;
+            hints--; updatePowerupUI(); playSound('powerup');
+            var unmatched = [];
+            for (var i = 0; i < cards.length; i++) {
+                if (!cards[i].matched && !cards[i].el.classList.contains('flipped')) unmatched.push(i);
+            }
+            if (unmatched.length < 2) return;
+            var pool = [];
+            for (var j = 0; j < unmatched.length; j++) {
+                for (var k = j + 1; k < unmatched.length; k++) {
+                    if (cards[unmatched[j]].emoji === cards[unmatched[k]].emoji) pool.push([unmatched[j], unmatched[k]]);
+                }
+            }
+            var pair = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : [unmatched[0], unmatched[1]];
+            cards[pair[0]].el.style.boxShadow = '0 0 20px rgba(250, 204, 21, 0.8)';
+            cards[pair[1]].el.style.boxShadow = '0 0 20px rgba(250, 204, 21, 0.8)';
+            setTimeout(function() {
+                cards[pair[0]].el.style.boxShadow = '';
+                cards[pair[1]].el.style.boxShadow = '';
+            }, 1500);
+        }
+
+        function usePeek() {
+            if (peeks <= 0 || !roundActive || lockBoard) return;
+            peeks--; updatePowerupUI(); playSound('powerup');
+            var unmatched = [];
+            for (var i = 0; i < cards.length; i++) {
+                if (!cards[i].matched && !cards[i].el.classList.contains('flipped')) unmatched.push(i);
+            }
+            if (unmatched.length === 0) return;
+            var count = Math.min(4, unmatched.length);
+            shuffle(unmatched);
+            var chosen = unmatched.slice(0, count);
+            chosen.forEach(function(idx) { cards[idx].el.classList.add('flipped'); });
+            lockBoard = true;
+            setTimeout(function() {
+                chosen.forEach(function(idx) { if (!cards[idx].matched) cards[idx].el.classList.remove('flipped'); });
+                lockBoard = false;
+            }, 1200);
+        }
+
+        function useFreeze() {
+            if (freezes <= 0 || !roundActive || isFrozen) return;
+            freezes--; updatePowerupUI(); playSound('powerup');
+            isFrozen = true;
+            var pill = document.getElementById('turnPill');
+            var text = document.getElementById('turnText');
+            if (text) text.textContent = '⏱️ Time Frozen!';
+            setTimeout(function() { isFrozen = false; updateTurnUI(); }, 5000);
+        }
+
+        // ==================== AI TURN ====================
+        function aiTurn() {
+            if (!roundActive) return;
+            aiForget();
+            var unmatched = [];
+            for (var i = 0; i < cards.length; i++) {
+                if (!cards[i].matched && !cards[i].el.classList.contains('flipped')) unmatched.push(i);
+            }
+            if (unmatched.length < 2) { lockBoard = false; switchTurn(); return; }
+
+            var knownPairs = {};
+            for (var key in aiMemory) {
+                var idx = parseInt(key);
+                if (cards[idx] && cards[idx].matched) continue;
+                var emoji = aiMemory[key];
+                if (!knownPairs[emoji]) knownPairs[emoji] = [];
+                knownPairs[emoji].push(idx);
+            }
+            var knownPair = null;
+            for (var e in knownPairs) {
+                if (knownPairs[e].length >= 2) { knownPair = knownPairs[e].slice(0, 2); break; }
+            }
+            if (knownPair) {
+                var messUp = difficulty === 'baby' ? 0.6 : difficulty === 'easy' ? 0.45 : difficulty === 'normal' ? 0.2 : difficulty === 'hard' ? 0.08 : 0.03;
+                if (Math.random() < messUp) knownPair = null;
+            }
+            var pick1, pick2;
+            if (knownPair) { pick1 = knownPair[0]; pick2 = knownPair[1]; }
+            else {
+                var knownIndices = [];
+                for (var k in aiMemory) {
+                    var ki = parseInt(k);
+                    if (cards[ki] && !cards[ki].matched && !cards[ki].el.classList.contains('flipped')) knownIndices.push(ki);
+                }
+                if (knownIndices.length > 0 && Math.random() > 0.2) pick1 = knownIndices[Math.floor(Math.random() * knownIndices.length)];
+                else pick1 = unmatched[Math.floor(Math.random() * unmatched.length)];
+                revealCard(pick1);
+                var firstEmoji = cards[pick1].emoji;
+                var pairMemories = [];
+                for (var pk in aiMemory) {
+                    if (parseInt(pk) !== pick1 && aiMemory[pk] === firstEmoji) pairMemories.push(parseInt(pk));
+                }
+                var remaining = unmatched.filter(function(x) { return x !== pick1; });
+                if (pairMemories.length > 0 && Math.random() > 0.12) pick2 = pairMemories[0];
+                else pick2 = remaining[Math.floor(Math.random() * remaining.length)];
+            }
+            if (pick1 === undefined || pick2 === undefined) { pick1 = unmatched[0]; pick2 = unmatched[1]; }
+            revealCard(pick1); playSound('flip');
+            setTimeout(function() {
+                revealCard(pick2); playSound('flip');
+                setTimeout(function() { flipped = [pick1, pick2]; checkPair(); }, 350);
+            }, 600);
+        }
+
+        // ==================== END ROUND ====================
+        function endRound(timeOut) {
+            roundActive = false;
+            clearInterval(timerInterval);
+            var timeTaken = Math.floor((Date.now() - gameStartTime) / 1000);
+            var winner = null;
+            var icon = '🤝', title = "It's a Draw!", sub = "Equally matched!";
+
+            if (gameMode === 'zen') {
+                winner = 'P1'; p1Wins++;
+                icon = '🧘'; title = 'Zen Complete!';
+                sub = 'Peaceful victory in ' + timeTaken + 's';
+            } else if (timeOut) {
+                if (gameMode === 'time') {
+                    winner = p1Pairs > p2Pairs ? 'P1' : (p2Pairs > p1Pairs ? 'P2' : null);
+                    if (winner === 'P1') { p1Wins++; icon = '🏆'; title = "Time's Up! P1 Wins!"; sub = 'Better memory under pressure!'; }
+                    else if (winner === 'P2') { p2Wins++; icon = gameMode === 'pvc' ? '🤖' : '🏆'; title = "Time's Up! P2 Wins!"; sub = gameMode === 'pvc' ? 'AI beat the clock!' : 'Player 2 wins!'; }
+                    else { draws++; title = "Time's Up! Draw!"; sub = 'Evenly matched!'; }
+                }
+            } else {
+                if (p1Pairs > p2Pairs) {
+                    winner = 'P1'; p1Wins++; icon = '🏆';
+                    title = 'Player 1 Wins!';
+                    sub = gameMode === 'pvc' ? 'You beat the machine!' : 'Player 1 takes the round!';
+                } else if (p2Pairs > p1Pairs) {
+                    winner = 'P2'; p2Wins++;
+                    icon = gameMode === 'pvc' ? '🤖' : '🏆';
+                    title = gameMode === 'pvc' ? 'Computer Wins!' : 'Player 2 Wins!';
+                    sub = gameMode === 'pvc' ? 'The AI got lucky!' : 'Player 2 takes the round!';
+                } else {
+                    draws++;
+                }
+            }
+
+            stats.gamesPlayed++;
+            if (winner === 'P1') stats.totalWins++;
+            if (timeTaken < stats.bestTime) stats.bestTime = timeTaken;
+
+            checkAchievements(winner, timeTaken);
+            saveStats();
+            updateMenuStats();
+
+            if (winner) roundStarter = winner;
+            else roundStarter = roundStarter === 'P1' ? (gameMode === 'pvc' ? 'AI' : 'P2') : 'P1';
+
+            updateScoreUI();
+            playSound('win');
+            if (winner === 'P1' || (gameMode === 'pvp' && winner === 'P2')) createConfetti();
+
+            document.getElementById('mIcon').textContent = icon;
+            document.getElementById('mTitle').textContent = title;
+            document.getElementById('mSub').textContent = sub;
+            document.getElementById('mP1').textContent = p1Pairs;
+            document.getElementById('mP2').textContent = p2Pairs;
+            document.getElementById('mTime').textContent = timeTaken + 's';
+
+            setTimeout(function() { document.getElementById('overlay').classList.add('active'); }, 600);
+        }
+
+        function endZenLevel() {
+            roundActive = false;
+            clearInterval(timerInterval);
+            var timeTaken = Math.floor((Date.now() - gameStartTime) / 1000);
+            var stars = calculateZenStars();
+            var acc = zenTotalMoves > 0 ? Math.round((zenCorrectMoves / zenTotalMoves) * 100) : 100;
+
+            stats.gamesPlayed++;
+            stats.totalWins++;
+            if (timeTaken < stats.bestTime) stats.bestTime = timeTaken;
+
+            if (acc === 100) unlockAchievement('zen_perfect');
+            if (zenLevel >= 3) unlockAchievement('zen_novice');
+            if (zenLevel >= 5) unlockAchievement('zen_warrior');
+            if (zenLevel >= 10) unlockAchievement('zen_master');
+            if (zenLevel > stats.zenBestLevel) stats.zenBestLevel = zenLevel;
+            if (zenScore > stats.zenTotalScore) stats.zenTotalScore = zenScore;
+            saveStats();
+            updateMenuStats();
+
+            playSound('levelup');
+            createConfetti();
+
+            document.getElementById('zIcon').textContent = '🧘';
+            document.getElementById('zTitle').textContent = 'Level ' + zenLevel + ' Complete!';
+            document.getElementById('zSub').textContent = stars === 3 ? 'Perfect! Flawless memory!' : stars === 2 ? 'Great job! Almost perfect!' : 'Good effort! Keep practicing!';
+            document.getElementById('zMoves').textContent = zenMoves;
+            document.getElementById('zAccuracy').textContent = acc + '%';
+            document.getElementById('zScore').textContent = zenScore;
+
+            for (var i = 1; i <= 3; i++) {
+                var el = document.getElementById('zs' + i);
+                if (el) el.classList.toggle('earned', i <= stars);
+            }
+
+            setTimeout(function() { document.getElementById('zenOverlay').classList.add('active'); }, 600);
+        }
+
+        function nextRound() {
+            document.getElementById('overlay').classList.remove('active');
+            doRestartRound();
+        }
+
+        // ==================== EFFECTS ====================
+        function createConfetti() {
+            var colors = ['#667eea', '#f093fb', '#4ade80', '#fb923c', '#facc15', '#f87171', '#a78bfa', '#2dd4bf'];
+            for (var i = 0; i < 50; i++) {
+                setTimeout(function() {
+                    var c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    c.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(c);
+                    setTimeout(function() { c.remove(); }, 4000);
+                }, i * 25);
+            }
+        }
+
+        // ==================== SHARE & RATE ====================
+        function shareApp() {
+            var text = "I'm playing MemoMatch - Memory Battle Arena! Can you beat my high score? 🧠🔥";
+            if (navigator.share) navigator.share({ title: 'MemoMatch', text: text });
+            else alert('Share: ' + text);
+        }
+
+        function rateApp() {
+            if (window.AndroidInterface && window.AndroidInterface.rateApp) window.AndroidInterface.rateApp();
+            else alert('Rate us on the PlayStore! ⭐⭐⭐⭐⭐');
+        }
+
+        // ==================== OFFLINE SW ====================
+        if ('serviceWorker' in navigator) {
+            var swCode = "self.addEventListener('install',function(e){self.skipWaiting()});self.addEventListener('activate',function(e){self.clients.claim()});self.addEventListener('fetch',function(e){e.respondWith(fetch(e.request).then(function(r){var c=r.clone();caches.open('mm-v2').then(function(cache){cache.put(e.request,c)});return r}).catch(function(){return caches.match(e.request)}))});";
+            var blob = new Blob([swCode], { type: 'application/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(function() {});
+        }
+
+        // ==================== RESIZE HANDLER ====================
+        var resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(fitBoard, 150);
+        });
+
+        // ==================== BOOT ====================
+        function bootGame() {
+            try { loadStats(); } catch(e) {}
+            try { initMenu(); } catch(e) { console.error('initMenu error:', e); }
+            setTimeout(function() {
+                var splash = document.getElementById('splashPage');
+                var menu = document.getElementById('menuPage');
+                if (splash) splash.classList.remove('active');
+                if (menu) menu.classList.add('active');
+            }, 1800);
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bootGame);
+        } else {
+            bootGame();
+        }
+    </script>
+</body>
+</html>
